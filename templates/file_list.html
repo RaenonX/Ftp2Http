@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Files in {{ current_path.full_path }}</title>
+    <link rel="icon" href="{{ url_for("static", filename="favicon.ico") }}">
+    <link rel="stylesheet" href="{{ url_for("static", filename="style.css") }}">
+</head>
+<body>
+
+<div style="overflow-x:auto;">
+    <div class="current-path">
+        <a class="v-align-mid" href="{{ url_for("get_file_list", ftp_path="/") }}"><img class="home-icon"
+                                                                                        src="{{ url_for("static", filename="home.png") }}"
+                                                                                        alt="(Home)"/></a>
+        /
+        {% for section, path in current_path.full_paths_from_root %}
+            <a href="{{ url_for("get_file_list", ftp_path=path) }}">{{ section }}</a>
+            /
+        {% endfor %}
+    </div>
+    <table>
+        <tr>
+            <th class="file-icon"></th>
+            <th class="file-name">Name</th>
+            <th class="file-size">Size</th>
+            <th class="file-modified">Last Modified (UTC)</th>
+            <th class="file-size">Size (original)</th>
+        </tr>
+        {% for entry in file_entries %}
+            <tr>
+                <td class="file-icon">
+                    {% if entry.is_file %}
+                        <img class="file-icon" src="{{ url_for("static", filename="file.png") }}" alt="(File)"/>
+                    {% elif entry.is_directory %}
+                        <img class="file-icon" src="{{ url_for("static", filename="folder.png") }}" alt="(Dir)"/>
+                    {% endif %}
+                </td>
+                <td class="file-name">
+                    {% if entry.is_file %}
+                        {% set link = url_for("download", ftp_path=current_path.full_path_for_url + entry.file_name) %}
+                    {% elif entry.is_directory %}
+                        {% set link = url_for("get_file_list", ftp_path=current_path.full_path_for_url + entry.file_name) %}
+                    {% endif %}
+                    <a href="{{ link }}">
+                        {{ entry.file_name }}
+                    </a>
+                </td>
+                <td class="file-size">{{ entry.file_size.formatted }}</td>
+                <td class="file-modified">{{ entry.modified_utc_str }}</td>
+                <td class="file-size">{{ entry.file_size.original }}</td>
+            </tr>
+        {% endfor %}
+    </table>
+</div>
+</body>
+</html>

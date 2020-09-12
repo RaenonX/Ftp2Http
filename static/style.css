@@ -1,0 +1,63 @@
+body {
+    padding: 0.3em;
+}
+
+.v-align-mid {
+    vertical-align: middle;
+}
+
+div.current-path {
+    color: #9c1a1c;
+    font-size: 1.7em;
+    padding: 0.3em 0;
+}
+
+span.current-path {
+    vertical-align: middle;
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+th {
+    background-color: #0d5698;
+    color: white;
+}
+
+th, td {
+    padding: 8px;
+    border-bottom: 1px solid #ddd;
+}
+
+img.home-icon {
+    width: 1em;
+    height: 1em;
+}
+
+img.file-icon {
+    width: 1.5em;
+    height: 1.5em;
+}
+
+td.file-icon {
+    text-align: center;
+    width: 2em;
+}
+
+td.file-name {
+    text-align: left;
+}
+
+td.file-size {
+    text-align: right;
+}
+
+td.file-modified {
+    text-align: center;
+}
+
+tr:hover {
+    background-color: #dedede;
+}
