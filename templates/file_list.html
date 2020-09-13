@@ -46,7 +46,7 @@
                         {{ entry.file_name }}
                     </a>
                 </td>
-                <td class="file-size">{{ entry.file_size.formatted }}</td>
+                <td class="file-size">{% if entry.is_file %}{{ entry.file_size.formatted }}{% endif %}</td>
                 <td class="file-modified">{{ entry.modified_utc_str }}</td>
                 <td class="file-size">{{ entry.file_size.original }}</td>
             </tr>
