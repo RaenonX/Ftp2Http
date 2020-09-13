@@ -1,0 +1,9 @@
+# Requirements for development environment
+
+# ------------------
+
+# Production packages
+-r requirements.txt
+
+# Tests
+pytest

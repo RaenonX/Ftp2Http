@@ -4,9 +4,10 @@ from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from enum import Enum, auto
-from io import BytesIO
 from math import log
 from typing import List, Dict, Generator, Optional
+
+from path import PathInfo
 
 __all__ = ("get_file_entries", "retrieve_file")
 
@@ -113,12 +114,8 @@ class FTPFile:
         file_name, info = entry
         entry_type = EntryType.parse_from_mlsd(info["type"])
         file_size = FileSize(int(info["size"]))
-        modified_utc = (
-            datetime
-                .strptime(info["modify"], "%Y%m%d%H%M%S")
-                .replace(tzinfo=timezone.utc)
-                .strftime("%Y-%m-%d %H:%M:%S")
-        )
+        modified_utc = datetime.strptime(info["modify"], "%Y%m%d%H%M%S").replace(tzinfo=timezone.utc)
+        modified_utc = modified_utc.strftime("%Y-%m-%d %H:%M:%S")
 
         return FTPFile(entry_type, file_name, file_size, modified_utc)
 
@@ -145,13 +142,79 @@ def get_file_entries(path: str = "") -> Generator[FTPFile, None, None]:
         yield FTPFile.parse_from_mlsd(entry)
 
 
-def retrieve_file(path: str) -> Optional[BytesIO]:
-    """Retrieve the file stream for file downloading."""
-    file = BytesIO()
+class FTPFileStream:
+    def __init__(self, ftp_client: ftplib.FTP, path_info: PathInfo, default_block_size: int = 8196):
+        """
+        Initialize a :class:`FTPFileStream`.
 
-    try:
-        ftp.retrbinary(f"RETR {path}", file.write)
-    except ftplib.error_perm:
+        :param ftp_client: ftp client to establish the connection
+        :param path_info: a `PathInfo` object of the file
+        :param default_block_size: default block size to be used when calling this object via ``next()`` or ``iter()``
+        """
+        self._ftp_client: ftplib.FTP = ftp_client
+        self._ftp_path: str = path_info.full_path
+        try:
+            self._file_size: int = ftp_client.size(self._ftp_path)
+        except ftplib.error_perm as ex:
+            raise FileNotFoundError(self._ftp_path) from ex
+        self._file_name: str = self._ftp_path.split(self._ftp_path)[-1]
+
+        self._block_size = default_block_size
+        self._conn = None
+
+    @property
+    def file_name(self) -> str:
+        """Get the file name."""
+        return self._file_name
+
+    @property
+    def file_size(self) -> int:
+        """Get the file size in bytes."""
+        return self._file_size
+
+    def read(self, block_size: Optional[int] = None) -> Optional[bytes]:
+        """
+        Read a binary chunk of data from the connection. If the connection was not established yet, establish it.
+
+        Uses the default block size given during instantiation if ``block_size`` is not specified.
+
+        Returns ``None`` if no further data can be read (reaches EOF).
+        """
+        if not block_size:
+            block_size = self._block_size
+
+        # Check if the connection is established
+        if not self._conn:
+            # Cannot use ``self.retrbinary()`` because it calls the callback method immediately
+            # to store the data in the memory, which is an undesired behavior because large file download will
+            # takes all RAM
+            #
+            # Implementation inspired by the original code of ``self.retrbinary()``
+            self._conn = self._ftp_client.transfercmd(f"RETR {self._ftp_path}")
+
+        # Get a chunk of data
+        if data := self._conn.recv(block_size):
+            return data
+
+        self._conn.close()
         return None
 
-    return BytesIO(file.getvalue())
+    def __iter__(self, *args, **kwargs):
+        for data in self:
+            yield data
+
+    def __next__(self, *args, **kwargs):
+        if data := self.read(self._block_size):
+            return data
+
+        # No data received (reached the end), close the connection
+        self._conn.close()
+        raise StopIteration()
+
+
+def retrieve_file(path_info: PathInfo) -> Optional[FTPFileStream]:
+    """Retrieve the file stream for file downloading."""
+    try:
+        return FTPFileStream(ftp, path_info)
+    except FileNotFoundError:
+        return None

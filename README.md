@@ -1,15 +1,9 @@
 # Ftp2Http
 Bridge for serving and downloading the FTP content via HTTP.
 
+Check [issues page][issues] for the to-be-impplemented features!
 
-### TODO list
-
-- [ ] Download the whole folder as zipped file
-
-- [ ] CI tests
-
-- [ ] Code linting
-
+[issues]: https://github.com/RaenonX/Ftp2Http/issues
 
 ### Timeline
 

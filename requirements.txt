@@ -1,1 +1,6 @@
+# Requirements for production environment
+
+# ------------------
+
+# Web framework
 Flask
