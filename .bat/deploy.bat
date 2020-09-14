@@ -29,7 +29,6 @@ ECHO %CLR_CYN%Installing/Upgrading the requirements...%CLR_NIL%
 pip install -r requirements.txt --upgrade || GOTO :error
 
 ECHO %CLR_GRN%Done deploying.%CLR_NIL%
-PAUSE
 
 GOTO end
 
@@ -38,4 +37,10 @@ GOTO end
 ECHO %CLR_RED%Error occurred during deployment.%CLR_NIL%
 PAUSE
 
+EXIT /B
+
 :end
+
+ECHO Press any key to start the application.
+PAUSE
+flask run --port 8787
