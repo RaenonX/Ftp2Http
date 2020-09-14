@@ -10,7 +10,11 @@ app = Flask(__name__)
 
 @app.route("/")
 def home():
-    return redirect(url_for("get_file_list"))
+    print(url_for("get_file_list"))
+    # Hard-coded, current mechanism forces full URL to be displayed
+    # because the website is ran under localhost,
+    # but actually served through IIS, which filter the subdomain
+    return redirect("http://nas.raenonx.cc/list")
 
 
 @app.route("/error")
@@ -53,4 +57,4 @@ def download(file_path: str):
 
 
 if __name__ == "__main__":
-    app.run(port=8787)
+    app.run()
