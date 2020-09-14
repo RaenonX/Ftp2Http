@@ -1,6 +1,6 @@
 from flask import Flask, render_template, redirect, url_for, send_file, make_response
 
-from ftp import get_file_entries, retrieve_file
+from file import get_file_entries, retrieve_file
 from logger import apply_log_config, log_exception
 from path import PathInfo
 
@@ -37,16 +37,20 @@ def get_file_list(file_path: str):
 
 @app.route("/download/<path:file_path>")
 def download(file_path: str):
-    file_stream = retrieve_file(PathInfo(file_path))
+    try:
+        file_stream = retrieve_file(PathInfo(file_path))
+    except FileNotFoundError:
+        log_exception()
+        return "Path not found.", 404
+    except IsADirectoryError:
+        log_exception()
+        return "Path to download the file is a directory.", 406
 
-    if not file_stream:
-        return "Error downloading the file. Check if the file exists. Also make sure that it is NOT a directory."
-
-    resp = make_response(send_file(file_stream, as_attachment=True, attachment_filename=file_stream.file_name))
+    resp = make_response(send_file(file_stream.stream, as_attachment=True, attachment_filename=file_stream.file_name))
     resp.headers["Content-Length"] = file_stream.file_size
 
     return resp
 
 
 if __name__ == "__main__":
-    app.run()
+    app.run(port=8787)
