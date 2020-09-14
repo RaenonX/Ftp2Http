@@ -1,5 +1,7 @@
 """Module for all FTP controls including file info parsing."""
 import ftplib
+import logging
+import time
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -11,8 +13,12 @@ from path import PathInfo
 
 __all__ = ("get_file_entries", "retrieve_file")
 
-ftp = ftplib.FTP("192.168.50.6", user="anonymous")
-ftp.encoding = "UTF-8"  # Default is ASCII
+
+def generate_ftp_client():
+    ftp = ftplib.FTP("192.168.50.6", user="anonymous")
+    ftp.encoding = "UTF-8"  # Default is ASCII
+
+    return ftp
 
 
 class FileSize:
@@ -138,12 +144,12 @@ class FTPFile:
 
 def get_file_entries(path: str = "") -> Generator[FTPFile, None, None]:
     """Get a generator which yields files and directories under the current working directory."""
-    for entry in ftp.mlsd(path):
+    for entry in generate_ftp_client().mlsd(path):
         yield FTPFile.parse_from_mlsd(entry)
 
 
 class FTPFileStream:
-    def __init__(self, ftp_client: ftplib.FTP, path_info: PathInfo, default_block_size: int = 8196):
+    def __init__(self, ftp_client: ftplib.FTP, path_info: PathInfo, default_block_size: int = 8192):
         """
         Initialize a :class:`FTPFileStream`.
 
@@ -157,10 +163,12 @@ class FTPFileStream:
             self._file_size: int = ftp_client.size(self._ftp_path)
         except ftplib.error_perm as ex:
             raise FileNotFoundError(self._ftp_path) from ex
-        self._file_name: str = self._ftp_path.split(self._ftp_path)[-1]
+        self._file_name: str = self._ftp_path.split("/")[-2]
 
         self._block_size = default_block_size
         self._conn = None
+
+        self._last_log_time = time.time()
 
     @property
     def file_name(self) -> str:
@@ -171,6 +179,15 @@ class FTPFileStream:
     def file_size(self) -> int:
         """Get the file size in bytes."""
         return self._file_size
+
+    def _log(self):
+        if time.time() - self._last_log_time > 0.25:
+            logging.info(f"{self._ftp_path} - Transferring file...")
+
+            self._last_log_time = time.time()
+
+    def _log_end(self):
+        logging.info(f"{self._ftp_path} - Transfer done.")
 
     def read(self, block_size: Optional[int] = None) -> Optional[bytes]:
         """
@@ -185,6 +202,7 @@ class FTPFileStream:
 
         # Check if the connection is established
         if not self._conn:
+            self._ftp_client.voidcmd("TYPE I")
             # Cannot use ``self.retrbinary()`` because it calls the callback method immediately
             # to store the data in the memory, which is an undesired behavior because large file download will
             # takes all RAM
@@ -194,8 +212,10 @@ class FTPFileStream:
 
         # Get a chunk of data
         if data := self._conn.recv(block_size):
+            self._log()
             return data
 
+        self._log_end()
         self._conn.close()
         return None
 
@@ -205,7 +225,7 @@ class FTPFileStream:
 
     def __next__(self, *args, **kwargs):
         if data := self.read(self._block_size):
-            return data
+            yield data
 
         # No data received (reached the end), close the connection
         self._conn.close()
@@ -215,6 +235,6 @@ class FTPFileStream:
 def retrieve_file(path_info: PathInfo) -> Optional[FTPFileStream]:
     """Retrieve the file stream for file downloading."""
     try:
-        return FTPFileStream(ftp, path_info)
+        return FTPFileStream(generate_ftp_client(), path_info)
     except FileNotFoundError:
         return None
