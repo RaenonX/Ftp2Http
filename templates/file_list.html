@@ -10,12 +10,12 @@
 
 <div style="overflow-x:auto;">
     <div class="current-path">
-        <a class="v-align-mid" href="{{ url_for("get_file_list", ftp_path="/") }}"><img class="home-icon"
-                                                                                        src="{{ url_for("static", filename="home.png") }}"
-                                                                                        alt="(Home)"/></a>
+        <a class="v-align-mid" href="{{ url_for("get_file_list", file_path="/") }}"><img class="home-icon"
+                                                                                         src="{{ url_for("static", filename="home.png") }}"
+                                                                                         alt="(Home)"/></a>
         /
         {% for section, path in current_path.full_paths_from_root %}
-            <a href="{{ url_for("get_file_list", ftp_path=path) }}">{{ section }}</a>
+            <a href="{{ url_for("get_file_list", file_path=path) }}">{{ section }}</a>
             /
         {% endfor %}
     </div>
@@ -38,9 +38,9 @@
                 </td>
                 <td class="file-name">
                     {% if entry.is_file %}
-                        {% set link = url_for("download", ftp_path=current_path.full_path_for_url + entry.file_name) %}
+                        {% set link = url_for("download", file_path=current_path.full_path_for_url + entry.file_name) %}
                     {% elif entry.is_directory %}
-                        {% set link = url_for("get_file_list", ftp_path=current_path.full_path_for_url + entry.file_name) %}
+                        {% set link = url_for("get_file_list", file_path=current_path.full_path_for_url + entry.file_name) %}
                     {% endif %}
                     <a href="{{ link }}">
                         {{ entry.file_name }}

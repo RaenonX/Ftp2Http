@@ -35,9 +35,9 @@ def get_file_list(file_path: str):
         return f"Error occurred when viewing the directory. ({ex})", 500
 
 
-@app.route("/download/<path:ftp_path>")
-def download(ftp_path: str):
-    file_stream = retrieve_file(PathInfo(ftp_path))
+@app.route("/download/<path:file_path>")
+def download(file_path: str):
+    file_stream = retrieve_file(PathInfo(file_path))
 
     if not file_stream:
         return "Error downloading the file. Check if the file exists. Also make sure that it is NOT a directory."
