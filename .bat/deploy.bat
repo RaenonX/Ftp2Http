@@ -38,4 +38,9 @@ GOTO end
 ECHO %CLR_RED%Error occurred during deployment.%CLR_NIL%
 PAUSE
 
+EXIT /B
+
 :end
+
+ECHO Press any key to start the application
+flask run --port 8787
