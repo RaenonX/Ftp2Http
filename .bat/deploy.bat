@@ -16,11 +16,14 @@ call activate || GOTO :error
 ECHO %CLR_CYN%Heading back to the repo root...%CLR_NIL%
 cd ../.. || GOTO :error
 
-ECHO %CLR_CYN%Resetting the Git head to origin...%CLR_NIL%
+ECHO %CLR_CYN%Updating the current code to the latest version (1/3)...%CLR_NIL%
 git reset --hard origin || GOTO :error
 
-ECHO %CLR_CYN%Pulling the code from Github...%CLR_NIL%
+ECHO %CLR_CYN%Updating the current code to the latest version (2/3)...%CLR_NIL%
 git pull || GOTO :error
+
+ECHO %CLR_CYN%Updating the current code to the latest version (3/3)...%CLR_NIL%
+git reset --hard origin || GOTO :error
 
 ECHO %CLR_CYN%Installing/Upgrading the requirements...%CLR_NIL%
 pip install -r requirements.txt --upgrade || GOTO :error
